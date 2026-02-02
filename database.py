@@ -1,31 +1,34 @@
+import streamlit as st
 import os
 import time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# המתנה שה-DB יעלה (רק בהפעלה ראשונית)
 def get_db_connection():
-    db_url = os.getenv("DATABASE_URL")
+    # 1. בדיקה האם אנחנו בענן (יש סודות)
+    if hasattr(st, "secrets") and "DATABASE_URL" in st.secrets:
+        db_url = st.secrets["DATABASE_URL"]
+        # תיקון קטן ל-Supabase
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+    # 2. אחרת, אנחנו במחשב המקומי (לוקחים מה-Docker Compose)
+    else:
+        db_url = os.getenv("DATABASE_URL")
+        
     if not db_url:
         raise ValueError("DATABASE_URL is not set")
     
-    # ניסיון התחברות בלולאה (למנוע קריסה בהתחלה)
+    # ניסיון התחברות (חשוב להפעלה ראשונית של דוקר)
     while True:
         try:
             engine = create_engine(db_url)
             connection = engine.connect()
             connection.close()
-            print("Successfully connected to the database!")
             return engine
         except Exception as e:
-            print("Database not ready yet, waiting 2 seconds...")
+            print("Waiting for database...", e)
             time.sleep(2)
 
-# יצירת המנוע
 engine = get_db_connection()
-
-# הבסיס לכל הטבלאות שניצור בהמשך
 Base = declarative_base()
-
-# יצירת סשן (החיבור בפועל לשימוש בקוד)
 SessionLocal = sessionmaker(bind=engine)

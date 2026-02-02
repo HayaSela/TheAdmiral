@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  # 1. האפליקציה (האתר שלך)
-  app:
+  # האפליקציה (האתר שלך)
+  theadmiral-app:
     build: .
     ports:
-      - "8501:8501" # הפורט של Streamlit
+      - "8501:8501"
     depends_on:
-      - db
+      - theadmiral-db
     environment:
-      # כרגע: מתחבר ל-DB המקומי בדוקר
-      # בעתיד: נחליף את השורה הזו לכתובת בענן
-      DATABASE_URL: "postgresql://user:pass@db:5432/trading_db"
+      # חיבור ל-DB המקומי (בתוך הדוקר) לפיתוח
+      # שימי לב: השם של השרת הוא כעת theadmiral-db
+      DATABASE_URL: "postgresql://user:pass@theadmiral-db:5432/trading_db"
     volumes:
-      - .:/app  # טריק חשוב: כל שינוי בקוד שלך יתעדכן מיד בלי לבנות מחדש!
+      - .:/app
 
-  # 2. מסד הנתונים המקומי (זמני לפיתוח)
-  db:
+  # מסד הנתונים המקומי (לפיתוח בלבד - לא Supabase)
+  theadmiral-db:
     image: postgres:15
     environment:
       POSTGRES_USER: user
@@ -27,13 +27,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # 3. ניהול DB גרפי (CloudBeaver) - שיהיה לך נוח
+  # כלי ניהול גרפי (אופציונלי)
   db-gui:
     image: dbeaver/cloudbeaver:latest
     ports:
       - "8080:8978"
     depends_on:
-      - db
+      - theadmiral-db
 
 volumes:
   pgdata:
