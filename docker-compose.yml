@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # 1. האפליקציה (האתר שלך)
+  app:
+    build: .
+    ports:
+      - "8501:8501" # הפורט של Streamlit
+    depends_on:
+      - db
+    environment:
+      # כרגע: מתחבר ל-DB המקומי בדוקר
+      # בעתיד: נחליף את השורה הזו לכתובת בענן
+      DATABASE_URL: "postgresql://user:pass@db:5432/trading_db"
+    volumes:
+      - .:/app  # טריק חשוב: כל שינוי בקוד שלך יתעדכן מיד בלי לבנות מחדש!
+
+  # 2. מסד הנתונים המקומי (זמני לפיתוח)
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: trading_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 3. ניהול DB גרפי (CloudBeaver) - שיהיה לך נוח
+  db-gui:
+    image: dbeaver/cloudbeaver:latest
+    ports:
+      - "8080:8978"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
