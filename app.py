@@ -4,16 +4,35 @@ from sqlalchemy.orm import Session
 from database import engine, Base
 import models
 import yfinance as yf
-import market_data  # <--- ייבוא הסקריפט שלנו
+import market_data
 
 # --- הגדרות עמוד ---
 st.set_page_config(page_title="The Admiral", layout="wide", page_icon="⚓")
+
+# ==========================================
+# ⚠️ אזור איפוס בסיס הנתונים (זמני בלבד!) ⚠️
+# ==========================================
+
+# 1. מחיקת הטבלאות הישנות (פותר את ההתנגשות ב-Supabase)
+models.Base.metadata.drop_all(engine)
+
+# 2. יצירת הטבלאות החדשות (לפי המבנה המעודכן ב-models.py)
+models.Base.metadata.create_all(engine)
+
+# ==========================================
+# סוף אזור איפוס - למחוק את שורה מס' 17 אחרי שהאתר עולה!
+# ==========================================
 
 # --- פונקציות עזר ---
 def get_portfolio_data():
     """שליפת נתונים עדכניים מה-DB"""
     with Session(engine) as session:
-        stocks = session.query(models.Stock).all()
+        # בדיקה שהטבלה בכלל קיימת (למניעת קריסה אם ה-DB ריק לגמרי)
+        try:
+            stocks = session.query(models.Stock).all()
+        except Exception:
+            return pd.DataFrame()
+
         data = []
         for stock in stocks:
             last_quote = session.query(models.StockQuote).\
@@ -55,7 +74,7 @@ with tab1:
             hide_index=True
         )
     else:
-        st.warning("המסד נתונים ריק. עבור לטאב 'ניהול' כדי לטעון נתונים.")
+        st.warning("המסד נתונים ריק או אופס כרגע. עבור לטאב 'ניהול' כדי לטעון נתונים.")
 
 with tab2:
     st.subheader("בדיקת מניה בזמן אמת")
@@ -69,7 +88,6 @@ with tab2:
             except Exception:
                 st.error("לא נמצא מידע")
 
-# --- השינוי הגדול בטאב 3 ---
 with tab3:
     st.header("מנוע טעינת נתונים")
     st.write("כאן ניתן להזריק נתונים ל-DB (גם מקומי וגם בענן).")
