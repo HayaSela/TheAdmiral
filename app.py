@@ -9,13 +9,6 @@ import market_data
 # --- הגדרות עמוד ---
 st.set_page_config(page_title="The Admiral", layout="wide", page_icon="⚓")
 
-# ==========================================
-# ⚠️ אזור איפוס בסיס הנתונים (זמני בלבד!) ⚠️
-# ==========================================
-
-# 1. מחיקת הטבלאות הישנות (פותר את ההתנגשות ב-Supabase)
-models.Base.metadata.drop_all(engine)
-
 # 2. יצירת הטבלאות החדשות (לפי המבנה המעודכן ב-models.py)
 models.Base.metadata.create_all(engine)
 
