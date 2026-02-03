@@ -32,60 +32,112 @@ class Stock(Base):
     fullTimeEmployees = Column(Integer, nullable=True)
     longBusinessSummary = Column(Text, nullable=True)
 
-    # קשר לטבלת הנתונים
+    # --- קשרים (Relationships) ---
+    # אלו השורות הקריטיות שיוצרות את החיבורים לטבלאות האחרות
+    
     quotes = relationship("StockQuote", back_populates="stock", cascade="all, delete-orphan")
+    
+    transactions = relationship("Transaction", back_populates="stock", cascade="all, delete-orphan")
+    
+    # הקשר לפוזיציה (One-to-One)
+    position = relationship("Position", uselist=False, back_populates="stock", cascade="all, delete-orphan")
 
 
 class StockQuote(Base):
     """
-    FACT TABLE: טבלת העובדות.
+    FACT TABLE: נתונים היסטוריים מ-Yahoo.
     """
     __tablename__ = "stock_quotes"
 
     id = Column(Integer, primary_key=True, index=True)
     stock_id = Column(Integer, ForeignKey("stocks.id"))
-    
-    # --- השינוי שביקשת ---
-    # שדה זה יחזיק את ה-Index של Yahoo (תאריך ושעת המסחר המקורית)
     timestamp = Column(DateTime(timezone=True), index=True, nullable=False)
     
-    # --- מחירים ---
+    # מחירים
     currentPrice = Column(Float, nullable=True)
     open = Column(Float, nullable=True)
     previousClose = Column(Float, nullable=True)
     dayHigh = Column(Float, nullable=True)
     dayLow = Column(Float, nullable=True)
     
-    # --- טווחי זמן ---
+    # טווחי זמן
     fiftyTwoWeekHigh = Column(Float, nullable=True)
     fiftyTwoWeekLow = Column(Float, nullable=True)
     fiftyTwoWeekChange = Column(Float, nullable=True)
     fiftyDayAverage = Column(Float, nullable=True)
     twoHundredDayAverage = Column(Float, nullable=True)
     
-    # --- שווי ונפח ---
+    # שווי ונפח
     marketCap = Column(BigInteger, nullable=True)
     enterpriseValue = Column(BigInteger, nullable=True)
     volume = Column(BigInteger, nullable=True)
     averageVolume = Column(BigInteger, nullable=True)
     
-    # --- מכפילים ורווחיות ---
+    # מכפילים
     trailingPE = Column(Float, nullable=True)
     forwardPE = Column(Float, nullable=True)
     pegRatio = Column(Float, nullable=True)
     priceToBook = Column(Float, nullable=True)
     profitMargins = Column(Float, nullable=True)
     
-    # --- דיבידנד ---
+    # דיבידנד
     dividendRate = Column(Float, nullable=True)
     dividendYield = Column(Float, nullable=True)
     
-    # --- פיננסי ---
+    # פיננסי
     totalRevenue = Column(BigInteger, nullable=True)
     revenueGrowth = Column(Float, nullable=True)
     ebitda = Column(BigInteger, nullable=True)
     
-    # --- המלצות ---
     recommendationKey = Column(String, nullable=True)
 
+    # קשר הופכי למניה
     stock = relationship("Stock", back_populates="quotes")
+
+
+class Transaction(Base):
+    """
+    טבלת הפעולות: כל קנייה ומכירה נרשמת כאן.
+    """
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    stock_id = Column(Integer, ForeignKey("stocks.id"))
+    
+    date = Column(Date, nullable=False)
+    type = Column(String, nullable=False)
+    quantity = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)
+    fees = Column(Float, default=0.0)
+    total_amount = Column(Float, nullable=False)
+
+    # קשר הופכי למניה
+    stock = relationship("Stock", back_populates="transactions")
+
+
+class Position(Base):
+    """
+    טבלת הפוזיציות: המצב המחושב.
+    """
+    __tablename__ = "positions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    stock_id = Column(Integer, ForeignKey("stocks.id"), unique=True)
+    
+    # נתונים מחושבים
+    quantity = Column(Float, default=0.0)
+    average_cost = Column(Float, default=0.0)
+    total_cost = Column(Float, default=0.0)
+    
+    # נתוני שוק
+    current_price = Column(Float, default=0.0)
+    current_value = Column(Float, default=0.0)
+    daily_change = Column(Float, default=0.0)
+    daily_change_percent = Column(Float, default=0.0)
+    
+    notes = Column(Text, nullable=True)
+    last_updated = Column(DateTime(timezone=True), server_default=func.now())
+
+    # --- התיקון הקריטי ---
+    # השורה הזו הייתה חסרה כנראה, או לא תאמה לשם שהוגדר ב-Stock
+    stock = relationship("Stock", back_populates="position")

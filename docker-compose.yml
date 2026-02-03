@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # האפליקציה (האתר שלך)
   theadmiral-app:
     build: .
     ports:
@@ -9,13 +8,10 @@ services:
     depends_on:
       - theadmiral-db
     environment:
-      # חיבור ל-DB המקומי (בתוך הדוקר) לפיתוח
-      # שימי לב: השם של השרת הוא כעת theadmiral-db
       DATABASE_URL: "postgresql://user:pass@theadmiral-db:5432/trading_db"
     volumes:
       - .:/app
 
-  # מסד הנתונים המקומי (לפיתוח בלבד - לא Supabase)
   theadmiral-db:
     image: postgres:15
     environment:
@@ -27,11 +23,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # כלי ניהול גרפי (אופציונלי)
   db-gui:
     image: dbeaver/cloudbeaver:latest
     ports:
-      - "8080:8978"
+      - "8082:8978" # שיניתי ל-8082 כדי למנוע התנגשויות
     depends_on:
       - theadmiral-db
 
